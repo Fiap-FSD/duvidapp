@@ -5,6 +5,7 @@ import HomePage from './pages/page';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NewQuestionPage from './pages/NewQuestionPage';
+import QuestionDetailPage from './pages/QuestionDetailPage';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/new-question" element={<NewQuestionPage />} />
+            <Route path="/question/:id" element={<QuestionDetailPage />} />
           </Routes>
         </div>
       </AppProviders>
