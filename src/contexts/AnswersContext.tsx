@@ -1,57 +1,67 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
 import { useQuestions } from './QuestionsContext';
-import { Answer, AnswersContextType, Vote } from '..';
+
+// --- Tipos ---
+interface Vote {
+  id: string;
+  userId: string;
+  answerId: string;
+  type: 'up' | 'down';
+  createdAt: Date;
+}
+
+interface Answer {
+  id: string;
+  questionId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  votes: number;
+  isVerified: boolean;
+  isCorrect: boolean;
+}
+
+interface AnswersContextType {
+  addAnswer: (answerData: Omit<Answer, 'id' | 'createdAt' | 'updatedAt' | 'votes' | 'isVerified' | 'isCorrect'>) => void;
+  updateAnswer: (id: string, updates: Partial<Answer>) => void;
+  voteAnswer: (answerId: string, userId: string, type: 'up' | 'down') => void;
+  getUserVote: (answerId: string, userId: string) => Vote | undefined;
+}
 
 const AnswersContext = createContext<AnswersContextType | undefined>(undefined);
 
-interface AnswersProviderProps {
-  children: ReactNode;
-}
-
-export function AnswersProvider({ children }: AnswersProviderProps) {
+// --- Componente Provider ---
+export function AnswersProvider({ children }: { children: ReactNode }) {
   const [votes, setVotes] = useState<Vote[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { questions, updateQuestion } = useQuestions();
+  const { questions, updateQuestion } = useQuestions(); // Depende do context de Questions
 
-  // Carregar votos do localStorage na inicialização
+  // Carrega e salva os VOTOS DAS RESPOSTAS no localStorage
   useEffect(() => {
-    const loadVotes = () => {
-      try {
-        const savedVotes = localStorage.getItem('votes');
-        if (savedVotes) {
-          const votesData = JSON.parse(savedVotes);
-          // Converter strings de data de volta para objetos Date
-          const parsedVotes = votesData.map((v: any) => ({
-            ...v,
-            createdAt: new Date(v.createdAt),
-          }));
-          setVotes(parsedVotes);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar votos:', error);
-        localStorage.removeItem('votes');
-      } finally {
-        setIsLoading(false);
+    try {
+      const savedVotes = localStorage.getItem('answer_votes');
+      if (savedVotes) {
+        setVotes(JSON.parse(savedVotes).map((v: any) => ({...v, createdAt: new Date(v.createdAt)})));
       }
-    };
-
-    loadVotes();
+    } catch (error) {
+      console.error("Erro ao carregar votos das respostas:", error);
+      localStorage.removeItem('answer_votes');
+    }
   }, []);
 
-  // Salvar votos no localStorage sempre que houver mudanças
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('votes', JSON.stringify(votes));
-    }
-  }, [votes, isLoading]);
+    localStorage.setItem('answer_votes', JSON.stringify(votes));
+  }, [votes]);
 
-  const addAnswer = (answerData: Omit<Answer, 'id' | 'createdAt' | 'updatedAt' | 'votes'>) => {
+  // Função para adicionar uma nova resposta
+  const addAnswer = (answerData: Omit<Answer, 'id' | 'createdAt' | 'updatedAt' | 'votes' | 'isVerified' | 'isCorrect'>) => {
     const newAnswer: Answer = {
       ...answerData,
-      id: `answer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `answer_${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date(),
       votes: 0,
@@ -59,146 +69,67 @@ export function AnswersProvider({ children }: AnswersProviderProps) {
       isCorrect: false,
     };
 
-    // Encontrar a dúvida e adicionar a resposta
+    // Encontra a dúvida pai para adicionar a nova resposta
     const question = questions.find(q => q.id === answerData.questionId);
     if (question) {
       const updatedAnswers = [...question.answers, newAnswer];
-      updateQuestion(answerData.questionId, { answers: updatedAnswers });
+      // Usa a função do QuestionsContext para atualizar a dúvida com a nova lista de respostas
+      updateQuestion(question.id, { answers: updatedAnswers });
     }
   };
 
+  // Função para atualizar uma resposta existente (usada para votos)
   const updateAnswer = (id: string, updates: Partial<Answer>) => {
-    // Encontrar a dúvida que contém esta resposta
-    const question = questions.find(q => 
-      q.answers.some(a => a.id === id)
-    );
-    
+    const question = questions.find(q => q.answers.some(a => a.id === id));
     if (question) {
-      const updatedAnswers = question.answers.map(answer => 
-        answer.id === id 
-          ? { ...answer, ...updates, updatedAt: new Date() }
-          : answer
+      const updatedAnswers = question.answers.map(answer =>
+        answer.id === id ? { ...answer, ...updates, updatedAt: new Date() } : answer
       );
       updateQuestion(question.id, { answers: updatedAnswers });
     }
   };
 
-  const deleteAnswer = (id: string) => {
-    // Encontrar a dúvida que contém esta resposta
-    const question = questions.find(q => 
-      q.answers.some(a => a.id === id)
-    );
-    
-    if (question) {
-      const updatedAnswers = question.answers.filter(answer => answer.id !== id);
-      updateQuestion(question.id, { answers: updatedAnswers });
-      
-      // Remover votos relacionados a esta resposta
-      setVotes(prev => prev.filter(vote => vote.answerId !== id));
-    }
-  };
-
   const voteAnswer = (answerId: string, userId: string, type: 'up' | 'down') => {
-    // Verificar se o usuário já votou nesta resposta
+    let newVotes = [...votes];
     const existingVote = votes.find(v => v.answerId === answerId && v.userId === userId);
-    
+
     if (existingVote) {
       if (existingVote.type === type) {
-        // Remover voto se for o mesmo tipo
-        setVotes(prev => prev.filter(v => v.id !== existingVote.id));
+        newVotes = newVotes.filter(v => v.id !== existingVote.id);
       } else {
-        // Alterar tipo do voto
-        setVotes(prev => prev.map(v => 
-          v.id === existingVote.id 
-            ? { ...v, type }
-            : v
-        ));
+        newVotes = newVotes.map(v => v.id === existingVote.id ? { ...v, type } : v);
       }
     } else {
-      // Criar novo voto
-      const newVote: Vote = {
-        id: `vote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        answerId,
-        userId,
-        type,
-        createdAt: new Date(),
-      };
-      setVotes(prev => [...prev, newVote]);
+      newVotes.push({ id: `avote_${Date.now()}`, answerId, userId, type, createdAt: new Date() });
     }
 
-    // Atualizar contagem de votos na resposta
-    updateVoteCount(answerId);
-  };
-
-  const updateVoteCount = (answerId: string) => {
-    const answerVotes = votes.filter(v => v.answerId === answerId);
-    const upVotes = answerVotes.filter(v => v.type === 'up').length;
-    const downVotes = answerVotes.filter(v => v.type === 'down').length;
-    const totalVotes = upVotes - downVotes;
-
+    setVotes(newVotes);
+    
+    const totalVotes = newVotes
+      .filter(v => v.answerId === answerId)
+      .reduce((sum, vote) => sum + (vote.type === 'up' ? 1 : -1), 0);
+      
     updateAnswer(answerId, { votes: totalVotes });
   };
-
-  const verifyAnswer = (answerId: string, isVerified: boolean, isCorrect?: boolean, comment?: string) => {
-    const updates: Partial<Answer> = {
-      isVerified,
-      verificationComment: comment,
-    };
-
-    if (isCorrect !== undefined) {
-      updates.isCorrect = isCorrect;
-      
-      // Se esta resposta está sendo marcada como correta, 
-      // desmarcar outras respostas da mesma dúvida
-      if (isCorrect) {
-        const question = questions.find(q => 
-          q.answers.some(a => a.id === answerId)
-        );
-        
-        if (question) {
-          const updatedAnswers = question.answers.map(answer => 
-            answer.id === answerId 
-              ? { ...answer, ...updates, updatedAt: new Date() }
-              : { ...answer, isCorrect: false }
-          );
-          updateQuestion(question.id, { 
-            answers: updatedAnswers,
-            isResolved: true // Marcar dúvida como resolvida
-          });
-          return;
-        }
-      }
-    }
-
-    updateAnswer(answerId, updates);
-  };
-
-  const getUserVote = (answerId: string, userId: string): Vote | undefined => {
+  
+  const getUserVote = (answerId: string, userId: string) => {
     return votes.find(v => v.answerId === answerId && v.userId === userId);
   };
 
-  const value: AnswersContextType = {
-    addAnswer,
-    updateAnswer,
-    deleteAnswer,
-    voteAnswer,
-    verifyAnswer,
-    getUserVote,
-    isLoading,
-  };
+  const value = { addAnswer, updateAnswer, voteAnswer, getUserVote };
 
   return (
-    <AnswersContext.Provider value={value}>
+    <AnswersContext.Provider value={value as AnswersContextType}>
       {children}
     </AnswersContext.Provider>
   );
 }
 
+// --- Hook customizado ---
 export function useAnswers() {
   const context = useContext(AnswersContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAnswers deve ser usado dentro de um AnswersProvider');
   }
   return context;
 }
-

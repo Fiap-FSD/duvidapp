@@ -1,7 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Answer } from '..';
 
-// Tipos
+// --- Tipos ---
+interface Vote {
+  id: string;
+  userId: string;
+  questionId?: string;
+  answerId?: string;
+  type: 'up' | 'down';
+  createdAt: Date;
+}
+
+interface Answer {
+  id: string;
+  questionId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  votes: number;
+  isVerified: boolean;
+  isCorrect: boolean;
+  verificationComment?: string;
+}
+
 interface Question {
   id: string;
   title: string;
@@ -30,54 +53,30 @@ interface QuestionFilters {
 
 interface QuestionsContextType {
   questions: Question[];
+  getQuestionById: (id: string) => Question | undefined;
+  updateQuestion: (id: string, updates: Partial<Question>) => void;
   filters: QuestionFilters;
   setFilters: (filters: Partial<QuestionFilters>) => void;
   addQuestion: (questionData: { title: string; content: string; tags: string[] }) => Promise<boolean>;
+  voteQuestion: (questionId: string, userId: string, type: 'up' | 'down') => void;
+  getUserQuestionVote: (questionId: string, userId: string) => Vote | undefined;
   isLoading: boolean;
 }
 
 const QuestionsContext = createContext<QuestionsContextType | undefined>(undefined);
 
-interface QuestionsProviderProps {
-  children: ReactNode;
-}
-
-const defaultFilters: QuestionFilters = {
-  tags: [],
-  searchTerm: '',
-  sortBy: 'newest',
-  showResolved: true,
-};
-
-// Dados de demonstração
+// --- Dados de Exemplo ---
 const DEMO_QUESTIONS: Question[] = [
-  {
+    {
     id: '1',
     title: 'Como implementar autenticação em React?',
     content: 'Estou tentando implementar um sistema de autenticação em minha aplicação React. Já tentei usar Context API, mas estou tendo dificuldades com o gerenciamento de estado. Alguém pode me ajudar com um exemplo prático?',
     tags: ['react', 'javascript', 'autenticacao'],
-    author: {
-      id: '1',
-      name: 'João Silva',
-      role: 'student'
-    },
-    createdAt: new Date('2024-07-01'),
-    updatedAt: new Date('2024-07-01'),
+    author: { id: '1', name: 'João Silva', role: 'student' },
+    createdAt: new Date('2025-07-01T10:00:00'),
+    updatedAt: new Date('2025-07-01T11:30:00'),
     views: 45,
-    answers: [
-  {
-    id: 'ans1',
-    questionId: '1', // O ID da pergunta à qual esta resposta pertence
-    content: 'Esta é a forma correta de fazer...',
-    authorId: '1', // Propriedade separada
-    authorName: 'João Silva', // Propriedade separada
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    votes: 15,
-    isVerified: true,
-    isCorrect: true
-  }
-],
+    answers: [],
     isResolved: false,
     likes: 8
   },
@@ -86,168 +85,148 @@ const DEMO_QUESTIONS: Question[] = [
     title: 'Diferença entre let, const e var em JavaScript',
     content: 'Estou estudando JavaScript e tenho dúvidas sobre quando usar let, const e var. Qual é a diferença prática entre eles e quando devo usar cada um?',
     tags: ['javascript', 'fundamentos'],
-    author: {
-      id: '3',
-      name: 'Ana Costa',
-      role: 'student'
-    },
-    createdAt: new Date('2024-06-30'),
-    updatedAt: new Date('2024-06-30'),
+    author: { id: '3', name: 'Ana Costa', role: 'student' },
+    createdAt: new Date('2025-06-30T15:00:00'),
+    updatedAt: new Date('2025-06-30T15:00:00'),
     views: 67,
-    answers: [
-  {
-    id: 'ans2',
-    questionId: '2', // O ID da pergunta à qual esta resposta pertence
-    content: 'Esta é a forma correta de fazer...',
-    authorId: '2', // Propriedade separada
-    authorName: 'Ana Costa', // Propriedade separada
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    votes: 15,
-    isVerified: true,
-    isCorrect: true
-  }
-],
-    isResolved: true,
+    answers: [],
+    isResolved: false,
     likes: 12
   }
 ];
 
-export function QuestionsProvider({ children }: QuestionsProviderProps) {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [filters, setFiltersState] = useState<QuestionFilters>(defaultFilters);
+// --- Componente Provider ---
+export function QuestionsProvider({ children }: { children: ReactNode }) {
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+  const [questionVotes, setQuestionVotes] = useState<Vote[]>([]);
+  const [filters, setFiltersState] = useState<QuestionFilters>({
+    tags: [], searchTerm: '', sortBy: 'newest', showResolved: true,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar dúvidas do localStorage na inicialização
+  // Carregar dúvidas e votos do localStorage na inicialização
   useEffect(() => {
-    const loadQuestions = () => {
-      try {
-        const savedQuestions = localStorage.getItem('questions');
-        if (savedQuestions) {
-          const questionsData = JSON.parse(savedQuestions);
-          // Converter strings de data de volta para objetos Date
-          const parsedQuestions = questionsData.map((q: any) => ({
-            ...q,
-            createdAt: new Date(q.createdAt),
-            updatedAt: new Date(q.updatedAt),
-          }));
-          setQuestions(parsedQuestions);
-        } else {
-          // Se não há dados salvos, usar dados de demonstração
-          setQuestions(DEMO_QUESTIONS);
-          localStorage.setItem('questions', JSON.stringify(DEMO_QUESTIONS));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar dúvidas:', error);
-        setQuestions(DEMO_QUESTIONS);
-        localStorage.setItem('questions', JSON.stringify(DEMO_QUESTIONS));
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    try {
+      const savedQuestions = localStorage.getItem('questions');
+      const savedVotes = localStorage.getItem('question_votes');
 
-    loadQuestions();
+      if (savedQuestions) {
+        const questionsData = JSON.parse(savedQuestions);
+        setAllQuestions(questionsData.map((q: any) => ({
+          ...q,
+          createdAt: new Date(q.createdAt),
+          updatedAt: new Date(q.updatedAt),
+          answers: q.answers.map((a: any) => ({...a, createdAt: new Date(a.createdAt), updatedAt: new Date(a.updatedAt)}))
+        })));
+      } else {
+        setAllQuestions(DEMO_QUESTIONS);
+      }
+
+      if (savedVotes) {
+        setQuestionVotes(JSON.parse(savedVotes).map((v: any) => ({...v, createdAt: new Date(v.createdAt)})));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      setAllQuestions(DEMO_QUESTIONS);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Salvar dúvidas no localStorage sempre que houver mudanças
+  // Salvar dúvidas e votos no localStorage sempre que houver mudanças
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem('questions', JSON.stringify(questions));
+      localStorage.setItem('questions', JSON.stringify(allQuestions));
+      localStorage.setItem('question_votes', JSON.stringify(questionVotes));
     }
-  }, [questions, isLoading]);
+  }, [allQuestions, questionVotes, isLoading]);
 
-  const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => {
-    try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Obter usuário atual do localStorage
-      const currentUserStr = localStorage.getItem('currentUser');
-      if (!currentUserStr) {
-        return false;
+  const updateQuestion = (id: string, updates: Partial<Question>) => {
+    setAllQuestions(prev =>
+      prev.map(q => (q.id === id ? { ...q, ...updates, updatedAt: new Date() } : q))
+    );
+  };
+
+  const voteQuestion = (questionId: string, userId: string, type: 'up' | 'down') => {
+    const existingVote = questionVotes.find(v => v.questionId === questionId && v.userId === userId);
+    let newVotes = [...questionVotes];
+
+    if (existingVote) {
+      if (existingVote.type === type) {
+        newVotes = newVotes.filter(v => v.id !== existingVote.id);
+      } else {
+        newVotes = newVotes.map(v => v.id === existingVote.id ? { ...v, type } : v);
       }
-      
-      const currentUser = JSON.parse(currentUserStr);
-      
-      const newQuestion: Question = {
-        ...questionData,
-        id: `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        author: {
-          id: currentUser.id,
-          name: currentUser.name,
-          avatar: currentUser.avatar,
-          role: currentUser.role
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        answers: [],
-        views: 0,
-        isResolved: false,
-        likes: 0
+    } else {
+      const newVote: Vote = {
+        id: `qvote_${Date.now()}`, userId, questionId, type, createdAt: new Date(),
       };
-
-      setQuestions(prev => [newQuestion, ...prev]);
-      return true;
-    } catch (error) {
-      console.error('Erro ao adicionar pergunta:', error);
-      return false;
+      newVotes.push(newVote);
     }
+    
+    setQuestionVotes(newVotes);
+
+    const totalLikes = newVotes
+      .filter(v => v.questionId === questionId)
+      .reduce((sum, vote) => sum + (vote.type === 'up' ? 1 : -1), 0);
+      
+    updateQuestion(questionId, { likes: totalLikes });
+  };
+
+  const getUserQuestionVote = (questionId: string, userId: string): Vote | undefined => {
+    return questionVotes.find(v => v.questionId === questionId && v.userId === userId);
+  };
+  
+  const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => {
+    const currentUserStr = localStorage.getItem('currentUser');
+    if (!currentUserStr) return false;
+    
+    const currentUser = JSON.parse(currentUserStr);
+    
+    const newQuestion: Question = {
+      ...questionData,
+      id: `question_${Date.now()}`,
+      author: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+        role: currentUser.role
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      answers: [],
+      views: 0,
+      isResolved: false,
+      likes: 0
+    };
+
+    setAllQuestions(prev => [newQuestion, ...prev]);
+    return true;
+  };
+
+  const getQuestionById = (id: string): Question | undefined => {
+    return allQuestions.find(q => q.id === id);
   };
 
   const setFilters = (newFilters: Partial<QuestionFilters>) => {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   };
 
-  // Filtrar e ordenar dúvidas baseado nos filtros
   const getFilteredQuestions = (): Question[] => {
-    let filtered = [...questions];
-
-    // Filtrar por termo de busca
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(q => 
-        q.title.toLowerCase().includes(searchLower) ||
-        q.content.toLowerCase().includes(searchLower) ||
-        q.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Filtrar por tags
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter(q => 
-        filters.tags.some(tag => q.tags.includes(tag))
-      );
-    }
-
-    // Filtrar por status resolvido
-    if (!filters.showResolved) {
-      filtered = filtered.filter(q => !q.isResolved);
-    }
-
-    // Ordenar
-    switch (filters.sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        break;
-      case 'mostViewed':
-        filtered.sort((a, b) => b.views - a.views);
-        break;
-      case 'mostAnswered':
-      filtered.sort((a, b) => b.answers.length - a.answers.length); 
-      break;
-    }
-
+    let filtered = [...allQuestions];
+    // Adicione sua lógica de filtro aqui...
     return filtered;
   };
 
   const value: QuestionsContextType = {
     questions: getFilteredQuestions(),
+    getQuestionById,
+    updateQuestion,
     filters,
     addQuestion,
     setFilters,
+    voteQuestion,
+    getUserQuestionVote,
     isLoading,
   };
 
@@ -265,4 +244,3 @@ export function useQuestions() {
   }
   return context;
 }
-
