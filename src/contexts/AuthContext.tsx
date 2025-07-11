@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 // Tipos
 interface User {
@@ -45,6 +47,8 @@ const DEMO_USERS: User[] = [
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  
 
   // Carregar usuário do localStorage na inicialização
   useEffect(() => {
@@ -70,24 +74,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Buscar usuários dos dados de exemplo e localStorage
-      const localUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const allUsers = [...DEMO_USERS, ...localUsers];
-      
-      // Encontrar usuário por email
-      const foundUser = allUsers.find(u => u.email === email);
-      
-      if (foundUser && password === '123456') {
-        setUser(foundUser);
-        localStorage.setItem('currentUser', JSON.stringify(foundUser));
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      const accessToken = data.access_token;
+
+      if (accessToken) {
+        // Armazena o token no cookie
+        document.cookie = `access_token=${accessToken}; path=/`;
+
+         Cookies.set('token', accessToken, { expires: 7 });
+
+        // Opcional: buscar dados do usuário na resposta ou em outra rota
+        // Exemplo: data.user
+        const userData = data.user || { id: '', name: '', email, role: 'student', createdAt: new Date() };
+        setUser(userData);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        // Redireciona para a página principal
+        window.location.href = '/';
+
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Erro no login:', error);
@@ -138,8 +159,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = () => {
+    Cookies.remove('token');
     setUser(null);
-    localStorage.removeItem('currentUser');
+    // router.push('/login');
+    navigate('/login');
   };
 
   const value: AuthContextType = {

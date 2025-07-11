@@ -9,6 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { X, Plus } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 export default function NewQuestionPage() {
   const navigate = useNavigate();
@@ -54,19 +55,38 @@ export default function NewQuestionPage() {
     }
 
     try {
-      const success = await addQuestion({
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        tags: formData.tags
+      const token = Cookies.get('access_token');
+      console.log('Token:', token);
+      if (!token) {
+        setError('Você não está autenticado. Por favor, faça login novamente.');
+        setIsLoading(false);
+        navigate('/login'); // Redireciona para o login se não houver token
+        return;
+      }
+
+      const response = await fetch('http://localhost:3000/duvida', { // URL do seu backend
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Envia o token para o backend
+        },
+        body: JSON.stringify({ // Envia os dados validados
+          title: formData.title.trim(),
+          content: formData.content.trim(),
+          tags: formData.tags,
+        }),
       });
 
-      if (success) {
-        navigate('/');
-      } else {
-        setError('Erro ao criar dúvida. Tente novamente.');
-      }
-    } catch (err) {
-      setError('Erro ao criar dúvida. Tente novamente.');
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Falha ao criar a dúvida.');
+        }
+
+         navigate('/');
+
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar dúvida. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
