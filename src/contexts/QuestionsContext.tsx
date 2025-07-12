@@ -120,7 +120,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
       }
 
       // 2. Faz a requisição GET para o seu backend
-      const response = await fetch('http://localhost:3000/duvida', {
+      const response = await fetch('https://duvidapp.onrender.com/duvida', {
         method: 'GET',
         headers: {
           // 3. Envia o token no cabeçalho de autorização
