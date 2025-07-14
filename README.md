@@ -2,9 +2,9 @@
   <img src="public/Fiap-logo.jpg" width="400" /></a>
 </p>
 
-# ✨ Implementação do Front-End do Blog Post
+# ✨ Implementação do Front-End do DuvidApp
 
-Este é um projeto de aplicativo de blog onde os usuários podem criar, editar e visualizar posts. A aplicação foi construída utilizando o framework Next.js, TypeScript, Styled-components, React Context API, Fetch API para chamadas a APIs externas, e autenticação com JWT armazenado em cookies. O design do projeto segue uma arquitetura moderna e modular, com foco na escalabilidade e na experiência do usuário.
+Este é um projeto de aplicativo de respostas a dúvidas colaborativas onde os usuários podem criar, editar e visualizar dúvidas e respostas. A aplicação foi construída utilizando o framework vue.js, JavaScript, tailwindcss, React Context API, Fetch API para chamadas a APIs externas, e autenticação com JWT armazenado em cookies. O design do projeto segue uma arquitetura moderna e modular, com foco na escalabilidade e na experiência do usuário.
 
 Será apresentada a maneira de execução de cada step do projeto contendo informações cruciais sobre como configurar, usar e contribuir com o projeto.
 
@@ -22,11 +22,11 @@ A equipe utilizou as seguintes ferramentas durante o desenvolvimento do projeto:
 
 - **GitHub**: O GitHub ofereceu controle de versão, permitindo que cada membro da equipe trabalhasse em diferentes funcionalidades sem afetar o código principal. A utilização de pull requests facilitou a revisão de código e a integração das mudanças, garantindo qualidade e consistência.
 
-- **Next.js**: Framework para React que permite renderização do lado do servidor (SSR) e geração de sites estáticos (SSG). Foi utilizado para criar uma estrutura escalável e otimizada para o aplicativo, aproveitando seus recursos como roteamento automático, APIs e renderização híbrida.
+- **Vue.js**: Framework em JavaScript progressivo  que permite rapidamente criar interfaces de usuário (IU). 
 
 - **React**: Biblioteca JavaScript para construção de interfaces de usuário. O React foi utilizado para criar a interação dinâmica da aplicação, permitindo atualizações eficientes do DOM e gerenciamento de estado de forma reativa.
 
-- **Styled-components**: Biblioteca que permite escrever CSS dentro de componentes React, criando componentes de estilo com escopo isolado. Utilizamos o Styled-components para garantir uma estilização modular, reutilizável e de fácil manutenção, além de evitar conflitos de estilo entre diferentes partes da aplicação.
+- **Tailwindcss**: Biblioteca que permite escrever CSS dentro de componentes React, criando componentes de estilo com escopo isolado.
 
 - **JWT (JSON Web Token)**: Utilizado para autenticação e autorização de usuários. O JWT é um token seguro transmitido entre o cliente e o servidor, permitindo que o usuário acesse áreas protegidas com base na autenticação bem-sucedida.
 
@@ -37,11 +37,13 @@ A equipe utilizou as seguintes ferramentas durante o desenvolvimento do projeto:
 
 ## 🏗️ Arquitetura da Aplicação
 
-A arquitetura do projeto segue o padrão da **NextJS**, que utiliza uma arquitetura JAMStack, que se caracteriza por um desenvolvimento de front-end independente de back-end, com foco em APIs e serviços de terceiros, e que permite a entrega de aplicações web rápidas e eficientes. Seguindo uma estrutura **App Routes** e **Page Router** permitindo que o projeto seja organizadod e forma modular e escalável, promevendo uma navegação intuitiva e otimizada, com rotas dinâmicas, layouts reutilizáveis e carregamento assíncrono de dados. Essa abordagem melhora tanto a experiência de desenvolvimento quanto a experiência do usuário, tornando o código mais limpo e fácil de manter.
+ESCREVER ARQUITETURA!
 
-A arquitetura segue o padrão **NextJS**, organizada em **App e Pages**, com:
+A arquitetura segue o padrão **DESCOBRIR**, organizada em **Pages**, com:
 
-- **App**: O diretório App define o layout global da aplicação e a página principal (root). Ele também contém os componentes comuns, como o cabeçalho, rodapé e outras estruturas reutilizáveis que são compartilhadas entre as várias páginas da aplicação.
+- **Componentes**: .
+- **Contexts**: .
+- **Hooks**: .
 - **Pages**: O diretório Pages contém os subdiretórios e arquivos de página específicos. Cada arquivo em Pages é tratado como uma rota e é automaticamente associada a uma URL específica. Isso inclui páginas como login, criação de posts, edição de posts e detalhes de posts, onde cada uma delas é responsável por exibir um conteúdo específico ao usuário.
 
 ### 📖 Estrutura dos diretórios:
@@ -116,8 +118,8 @@ package.json
 #### Clone este repositório:
 
 ```bash
-git clone https://github.com/Fiap-FSD/tech-3.git
-cd tech-3
+git clone https://github.com/Fiap-FSD/duvidapp.git
+cd duvidapp
 ```
 
 #### Instale as bibliotecas:
@@ -137,11 +139,11 @@ No terminal do projeto, rode:
 ```
 
 ### Fluxo de Navegação
-- A página inicial será carregada automaticamente.
-- Para fazer login, acesse a página /login.
+- A página de login será carregada automaticamente.
+- Para fazer login, digite o exemplo dado.
 - Após o login, o usuário será redirecionado para a página home.
-- Para editar um post, acesse /edit/[id], onde [id] é o identificador do post.
-- Para visualizar os detalhes de um post, acesse /post/[id].
+- Para editar uma dúvida, acesse /edit/[id], onde [id] é o identificador do post.
+- Para visualizar os detalhes de uma dúvida, acesse /duvida/[id].
 
 ### Fluxo de Autenticação
 
