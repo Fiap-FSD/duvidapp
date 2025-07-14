@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 
 // --- Tipos ---
 interface Vote {
@@ -50,6 +50,7 @@ interface QuestionFilters {
   searchTerm: string;
   sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered';
   showResolved: boolean;
+  authorId?: string;
 }
 
 interface QuestionsContextType {
@@ -65,36 +66,6 @@ interface QuestionsContextType {
 }
 
 const QuestionsContext = createContext<QuestionsContextType | undefined>(undefined);
-
-// --- Dados de Exemplo ---
-// const DEMO_QUESTIONS: Question[] = [
-//     {
-//     id: '1',
-//     title: 'Como implementar autenticação em React?',
-//     content: 'Estou tentando implementar um sistema de autenticação em minha aplicação React. Já tentei usar Context API, mas estou tendo dificuldades com o gerenciamento de estado. Alguém pode me ajudar com um exemplo prático?',
-//     tags: ['react', 'javascript', 'autenticacao'],
-//     author: { id: '1', name: 'João Silva', role: 'student' },
-//     createdAt: new Date('2025-07-01T10:00:00'),
-//     updatedAt: new Date('2025-07-01T11:30:00'),
-//     views: 45,
-//     answers: [],
-//     isResolved: false,
-//     likes: 8
-//   },
-//   {
-//     id: '2',
-//     title: 'Diferença entre let, const e var em JavaScript',
-//     content: 'Estou estudando JavaScript e tenho dúvidas sobre quando usar let, const e var. Qual é a diferença prática entre eles e quando devo usar cada um?',
-//     tags: ['javascript', 'fundamentos'],
-//     author: { id: '3', name: 'Ana Costa', role: 'student' },
-//     createdAt: new Date('2025-06-30T15:00:00'),
-//     updatedAt: new Date('2025-06-30T15:00:00'),
-//     views: 67,
-//     answers: [],
-//     isResolved: false,
-//     likes: 12
-//   }
-// ];
 
 // --- Componente Provider ---
 export function QuestionsProvider({ children }: { children: ReactNode }) {
@@ -257,19 +228,65 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   };
 
-  const getFilteredQuestions = (): Question[] => {
-    let filtered = [...allQuestions];
-    // Adicione sua lógica de filtro aqui...
-    return filtered;
-  };
+
+
+   // 💡 MUDANÇA PRINCIPAL: SUBSTITUINDO getFilteredQuestions POR useMemo
+  const filteredAndSortedQuestions = useMemo(() => {
+    console.log("Recalculando lista..."); // Adicione para ver quando a função roda
+
+    // ETAPA 1: FILTRAGEM
+    let filtered = allQuestions.filter(question => {
+      // Filtro de termo de busca
+      const searchTermLower = filters.searchTerm.toLowerCase().trim();
+      const searchMatch = searchTermLower === '' ||
+        question.title.toLowerCase().includes(searchTermLower) ||
+        question.content.toLowerCase().includes(searchTermLower);
+        
+      // Adicione aqui outros filtros que você tem (tags, showResolved, authorId)
+      // Exemplo para 'showResolved'
+      const resolvedMatch = filters.showResolved ? true : !question.isResolved;
+
+      // ⚙️ NOVO: Filtro de Tags
+      // Se não houver tags selecionadas, o filtro passa (true).
+      // Se houver, a pergunta PRECISA ter PELO MENOS UMA das tags selecionadas.
+      const tagsMatch = filters.tags.length === 0 ||
+      question.tags.some(tag => filters.tags.includes(tag));
+
+
+      return searchMatch && resolvedMatch && tagsMatch; // E outros que adicionar
+    });
+
+    // ETAPA 2: ORDENAÇÃO
+    // Criamos uma cópia com [...filtered] para não modificar o array original
+    const sorted = [...filtered].sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'mostViewed':
+          // Ordena por mais visualizações
+          return b.views - a.views;
+        case 'mostAnswered':
+          // Ordena por mais respostas
+          return b.answers.length - a.answers.length;
+        case 'oldest':
+          // Ordena pela data de criação mais antiga
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'newest':
+        default:
+          // Ordena pela data de criação mais nova (padrão)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+    return sorted;
+  }, [allQuestions, filters]); // Dependências: Roda de novo só se allQuestions ou filters mudar
+
 
   const value: QuestionsContextType = {
-    questions: getFilteredQuestions(),
+    // ❗️ Usa a lista memoizada aqui
+    questions: filteredAndSortedQuestions,
     getQuestionById,
     updateQuestion,
     filters,
-    addQuestion,
     setFilters,
+    addQuestion,
     voteQuestion,
     getUserQuestionVote,
     isLoading,
