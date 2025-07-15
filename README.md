@@ -28,6 +28,8 @@ A equipe utilizou as seguintes ferramentas durante o desenvolvimento do projeto:
 
 - **Tailwindcss**: Biblioteca que permite escrever CSS dentro de componentes React, criando componentes de estilo com escopo isolado.
 
+- **Radix UI**: Uma biblioteca de componentes de interface do usuário (UI) de código aberto, focada em acessibilidade e personalização, que permite construir sistemas de design e aplicações web de alta qualidade. Ela oferece componentes básicos, como formulários, acordeões e modais, que podem ser usados como base para um sistema de design personalizado, sem estilização prévia, priorizando a acessibilidade e a independência de tecnologia assistiva. 
+
 - **JWT (JSON Web Token)**: Utilizado para autenticação e autorização de usuários. O JWT é um token seguro transmitido entre o cliente e o servidor, permitindo que o usuário acesse áreas protegidas com base na autenticação bem-sucedida.
 
 - **js-cookie**: Biblioteca utilizada para manipulação de cookies no lado do cliente. Foi utilizada para armazenar e recuperar o token JWT de maneira eficiente, garantindo que o estado de autenticação fosse mantido durante a navegação.
