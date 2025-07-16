@@ -37,16 +37,47 @@ A equipe utilizou as seguintes ferramentas durante o desenvolvimento do projeto:
 - **Fetch API**: Usada para fazer requisições HTTP e buscar dados de uma API externa. A Fetch API foi utilizada para buscar os posts do servidor e enviar as informações do usuário, permitindo uma integração fluida com a API do backend.
 
 
+
 ## 🏗️ Arquitetura da Aplicação
 
-ESCREVER ARQUITETURA!
+🏛️ Arquitetura Completa (Full Stack)
+O projeto duvidapp utiliza uma arquitetura Cliente-Servidor (Client-Server), onde o frontend e o backend são aplicações completamente independentes e desacopladas, comunicando-se através de uma API RESTful.
 
-A arquitetura segue o padrão **DESCOBRIR**, organizada em **Pages**, com:
+A solução inteira é hospedada na nuvem da Render, que serve tanto os arquivos estáticos do frontend quanto a aplicação do backend.
 
-- **Componentes**: .
-- **Contexts**: .
-- **Hooks**: .
-- **Pages**: O diretório Pages contém os subdiretórios e arquivos de página específicos. Cada arquivo em Pages é tratado como uma rota e é automaticamente associada a uma URL específica. Isso inclui páginas como login, criação de posts, edição de posts e detalhes de posts, onde cada uma delas é responsável por exibir um conteúdo específico ao usuário.
+
+
+O frontend é uma Single Page Application (SPA) moderna, responsável por toda a interface e experiência do usuário.
+
+Framework: React 19 com o build tool Vite.
+
+Roteamento: React Router DOM para navegação no lado do cliente.
+
+UI & Estilização: Construído com primitivos de UI acessíveis da Radix UI e estilizado com a abordagem utility-first do Tailwind CSS. A arquitetura de componentes é altamente modular, seguindo a filosofia do shadcn/ui.
+
+Formulários e Validação: React Hook Form para gerenciamento de formulários e Zod para validação dos schemas de dados, garantindo consistência com o backend.
+
+Hospedagem: Servido como um Site Estático na Render.
+
+
+O backend é uma API robusta e escalável, responsável pela lógica de negócio, autenticação e comunicação com o banco de dados.
+
+Framework: NestJS, um framework Node.js que utiliza TypeScript e é executado sobre a plataforma Express.
+
+Arquitetura Interna: Fortemente modular, organizada em Modules, Controllers (para receber requisições) e Services (para a lógica de negócio), o que facilita a manutenção e o crescimento da aplicação.
+
+Autenticação: O sistema de autenticação é baseado em JSON Web Tokens (JWT), com senhas seguramente hasheadas usando BcryptJS.
+
+Validação de Dados: Utiliza Zod para validar os dados que chegam nas rotas da API, garantindo que apenas dados válidos e seguros sejam processados.
+
+Documentação da API: A API é autodocumentada usando Swagger (OpenAPI), permitindo visualizar e testar os endpoints de forma interativa.
+
+Hospedagem: Implantado como um Web Service na Render.
+
+Banco de Dados
+Tecnologia: MongoDB, um banco de dados NoSQL orientado a documentos, ideal para flexibilidade de esquemas e escalabilidade.
+
+Acesso aos Dados: A comunicação entre a API e o banco de dados é gerenciada pelo Mongoose, um ODM (Object Data Modeling) que facilita a modelagem e a interação com os dados.
 
 ### 📖 Estrutura dos diretórios:
 
