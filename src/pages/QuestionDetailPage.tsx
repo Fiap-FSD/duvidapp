@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuestions } from '../contexts/QuestionsContext';
@@ -61,7 +61,6 @@ export default function QuestionDetailPage() {
   const { id: questionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Hooks dos seus contextos
   const { user } = useAuth();
   const { getQuestionById, isLoading: isQuestionsLoading } = useQuestions();
   const { addAnswer } = useAnswers();
@@ -69,6 +68,10 @@ export default function QuestionDetailPage() {
   
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [questionId]);
 
   const question = questionId ? getQuestionById(questionId) : undefined;
   const answers = question?.answers || [];
@@ -78,7 +81,7 @@ export default function QuestionDetailPage() {
     if (!questionId || !user || newAnswerContent.trim().length < 10) return;
 
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay de rede
+    await new Promise(resolve => setTimeout(resolve, 500)); 
 
     addAnswer({
       questionId,
@@ -93,7 +96,6 @@ export default function QuestionDetailPage() {
     showToast('Resposta enviada com sucesso!', 'success');
   };
 
-  // Estados de Carregamento e Erro
   if (isQuestionsLoading) {
     return <MainLayout><p className="text-center p-10">Carregando...</p></MainLayout>;
   }
@@ -116,7 +118,6 @@ export default function QuestionDetailPage() {
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
-        {/* Seção da Dúvida */}
         <div className="pb-6 border-b">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{question.title}</h1>
           <div className="text-sm text-gray-500">
@@ -134,7 +135,6 @@ export default function QuestionDetailPage() {
           </div>
         </div>
 
-        {/* Seção de Respostas */}
         <div className="mt-10">
           {answers.length > 0 && (
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
@@ -154,7 +154,6 @@ export default function QuestionDetailPage() {
           </div>
         </div>
 
-        {/* Formulário de Nova Resposta */}
         {user && (
           <Card className="mt-12">
             <CardHeader><CardTitle className="text-2xl font-semibold">Sua Resposta</CardTitle></CardHeader>
