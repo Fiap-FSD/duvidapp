@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
@@ -7,7 +7,6 @@ import { MessageCircle, Eye, ThumbsUp, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// NOTA: Idealmente, este tipo viria de um arquivo compartilhado, como `src/types.ts`
 interface Question {
   id: string;
   title: string;
@@ -36,25 +35,42 @@ interface QuestionCardProps {
 export function QuestionCard({ question, compact = false }: QuestionCardProps) {
   const navigate = useNavigate();
 
-  // Otimização: Calcula a última resposta apenas se a lista de respostas mudar.
+  
+  const [likes, setLikes] = useState<number>(question.likes ?? 0);
+  
+  const [hasLiked, setHasLiked] = useState<boolean>(false);
+
   const lastAnswer = useMemo(() => {
     if (!question.answers || question.answers.length === 0) {
       return null;
     }
-    // Supondo que a última resposta é a última no array
     return question.answers[question.answers.length - 1];
   }, [question.answers]);
 
-  // Navega para a página de detalhes da dúvida ao clicar
   const handleCardClick = () => {
     navigate(`/question/${question.id}`);
+  };
+
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (hasLiked) {
+      
+      setLikes((prev) => Math.max(prev - 1, 0)); 
+      setHasLiked(false);
+    } else {
+      
+      setLikes((prev) => prev + 1);
+      setHasLiked(true);
+    }
   };
 
   return (
     <Card
       onClick={handleCardClick}
-      className={`transition-shadow cursor-pointer group ${
-        question.isResolved ? 'border-green-200 bg-green-50/40' : 'hover:shadow-md'
+      className={`transition-shadow group ${
+        question.isResolved ? 'border-green-200 bg-green-50/40' : 'hover:shadow-md cursor-pointer'
       }`}
     >
       <CardHeader className={compact ? 'pb-2' : 'pb-3'}>
@@ -84,7 +100,7 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
         )}
 
         <div className="flex items-center justify-between">
-          {/* Informações do Autor */}
+          {/* Autor */}
           <div className="flex items-center space-x-2">
             <Avatar className="h-6 w-6">
               <AvatarImage src={question.author.avatar} />
@@ -101,24 +117,46 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
             </div>
           </div>
 
-          {/* Estatísticas da Dúvida */}
+          {/* Estatísticas */}
           <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <div className="flex items-center space-x-1" title="Votos na dúvida">
+            {/* Curtir */}
+            <div
+              onClick={handleLikeClick}
+              className={`flex items-center space-x-1 cursor-pointer hover:text-blue-600 ${
+                hasLiked ? 'text-blue-600' : ''
+              }`}
+              title={hasLiked ? 'Você já curtiu (clique para remover)' : 'Curtir'}
+              aria-label={`Curtir. Total de curtidas: ${likes}`}
+            >
               <ThumbsUp className="h-4 w-4" />
-              <span>{question.likes}</span>
+              <span>{likes}</span>
             </div>
-            <div className="flex items-center space-x-1" title="Respostas">
+
+            {/* Respostas */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
+              title="Respostas"
+              aria-label={`Total de respostas: ${question.answers?.length ?? 0}`}
+            >
               <MessageCircle className="h-4 w-4" />
-              <span>{question.answers?.length || 0}</span>
+              <span>{question.answers?.length ?? 0}</span>
             </div>
-             <div className="flex items-center space-x-1" title="Visualizações">
+
+            {/* Visualizações */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
+              title="Visualizações"
+              aria-label={`Total de visualizações: ${question.views ?? 0}`}
+            >
               <Eye className="h-4 w-4" />
-              <span>{question.views}</span>
+              <span>{question.views ?? 0}</span>
             </div>
           </div>
         </div>
 
-        {/* Preview da Última Resposta */}
+        {/* Última resposta */}
         {!compact && lastAnswer && (
           <div className="mt-4 pt-3 border-t text-sm text-gray-600">
             <strong>Última resposta:</strong> {lastAnswer.authorName} •{' '}
