@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
@@ -7,26 +7,9 @@ import { MessageCircle, Eye, ThumbsUp, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface Question {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-  author: {
-    name: string;
-    avatar?: string;
-  };
-  createdAt: Date;
-  views: number;
-  answers: {
-    authorName: string;
-    createdAt: Date;
-    votes: number;
-  }[];
-  isResolved: boolean;
-  likes: number;
-}
-
+// Hooks e Tipos do Contexto
+import { useAuth } from '../contexts/AuthContext';
+import { useQuestions } from '../contexts/QuestionsContext';
 interface QuestionCardProps {
   question: Question;
   compact?: boolean;
@@ -34,36 +17,31 @@ interface QuestionCardProps {
 
 export function QuestionCard({ question, compact = false }: QuestionCardProps) {
   const navigate = useNavigate();
+  const { voteQuestion, getUserQuestionVote } = useQuestions();
+  const { user } = useAuth();
 
+  // A "fonte da verdade" agora vem do contexto
+  const isLikedByCurrentUser = user ? !!getUserQuestionVote(question.id, user.id) : false;
   
-  const [likes, setLikes] = useState<number>(question.likes ?? 0);
-  
-  const [hasLiked, setHasLiked] = useState<boolean>(false);
-
-  const lastAnswer = useMemo(() => {
-    if (!question.answers || question.answers.length === 0) {
-      return null;
-    }
-    return question.answers[question.answers.length - 1];
+  const lastAnswer = React.useMemo(() => {
+    if (!question.answers || question.answers.length === 0) return null;
+    return question.answers.reduce((latest, current) => 
+      new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest
+    );
   }, [question.answers]);
 
   const handleCardClick = () => {
     navigate(`/question/${question.id}`);
   };
 
-
+  // Esta função agora chama a API através do contexto
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    if (hasLiked) {
-      
-      setLikes((prev) => Math.max(prev - 1, 0)); 
-      setHasLiked(false);
-    } else {
-      
-      setLikes((prev) => prev + 1);
-      setHasLiked(true);
+    if (!user) {
+      navigate('/login'); // Redireciona para o login se não houver usuário
+      return;
     }
+    voteQuestion(question.id);
   };
 
   return (
@@ -100,7 +78,6 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
         )}
 
         <div className="flex items-center justify-between">
-          {/* Autor */}
           <div className="flex items-center space-x-2">
             <Avatar className="h-6 w-6">
               <AvatarImage src={question.author.avatar} />
@@ -117,38 +94,29 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
             </div>
           </div>
 
-          {/* Estatísticas */}
           <div className="flex items-center space-x-4 text-sm text-gray-500">
-            {/* Curtir */}
             <div
               onClick={handleLikeClick}
               className={`flex items-center space-x-1 cursor-pointer hover:text-blue-600 ${
-                hasLiked ? 'text-blue-600' : ''
+                isLikedByCurrentUser ? 'text-blue-600 font-semibold' : ''
               }`}
-              title={hasLiked ? 'Você já curtiu (clique para remover)' : 'Curtir'}
-              aria-label={`Curtir. Total de curtidas: ${likes}`}
+              title={isLikedByCurrentUser ? 'Remover curtida' : 'Curtir'}
             >
-              <ThumbsUp className="h-4 w-4" />
-              <span>{likes}</span>
+              <ThumbsUp className="h-4 w-4" fill={isLikedByCurrentUser ? 'currentColor' : 'none'} />
+              <span>{question.likes}</span>
             </div>
 
-            {/* Respostas */}
             <div
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
+              className="flex items-center space-x-1"
               title="Respostas"
-              aria-label={`Total de respostas: ${question.answers?.length ?? 0}`}
             >
               <MessageCircle className="h-4 w-4" />
               <span>{question.answers?.length ?? 0}</span>
             </div>
 
-            {/* Visualizações */}
             <div
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
+              className="flex items-center space-x-1"
               title="Visualizações"
-              aria-label={`Total de visualizações: ${question.views ?? 0}`}
             >
               <Eye className="h-4 w-4" />
               <span>{question.views ?? 0}</span>
@@ -156,7 +124,6 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
           </div>
         </div>
 
-        {/* Última resposta */}
         {!compact && lastAnswer && (
           <div className="mt-4 pt-3 border-t text-sm text-gray-600">
             <strong>Última resposta:</strong> {lastAnswer.authorName} •{' '}
