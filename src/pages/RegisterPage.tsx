@@ -23,12 +23,12 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // ✅ HANDLESUBMIT ATUALIZADO
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    // Validações
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem');
       setIsLoading(false);
@@ -42,20 +42,23 @@ export default function RegisterPage() {
     }
 
     try {
-      const success = await register({
+      // A função register agora retorna um objeto { success, message }
+      const result = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role
       });
 
-      if (success) {
-        navigate('/');
+      if (result.success) {
+        // Sucesso! Redireciona para a página de login para o novo usuário entrar.
+        navigate('/login', { state: { message: 'Conta criada com sucesso! Faça seu login.' } });
       } else {
-        setError('Erro ao criar conta. Email pode já estar em uso.');
+        // Exibe a mensagem de erro vinda da API
+        setError(result.message || 'Erro ao criar conta.');
       }
     } catch (err) {
-      setError('Erro ao criar conta. Tente novamente.');
+      setError('Erro de conexão. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +81,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <MessageCircle className="h-8 w-8 text-blue-600" />
@@ -91,12 +93,11 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Formulário de Cadastro */}
-        <Card className="">
-          <CardHeader className="">
-            <CardTitle className="">Criar Conta</CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle>Criar Conta</CardTitle>
           </CardHeader>
-          <CardContent className="">
+          <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
@@ -105,8 +106,8 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-2">
-                <Label className="" htmlFor="name">Nome completo</Label>
-                <Input className=""
+                <Label htmlFor="name">Nome completo</Label>
+                <Input
                   id="name"
                   name="name"
                   type="text"
@@ -118,8 +119,8 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="" htmlFor="email">Email</Label>
-                <Input className=""
+                <Label htmlFor="email">Email</Label>
+                <Input
                   id="email"
                   name="email"
                   type="email"
@@ -131,22 +132,22 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="" htmlFor="role">Tipo de conta</Label>
+                <Label htmlFor="role">Tipo de conta</Label>
                 <Select value={formData.role} onValueChange={handleRoleChange}>
-                  <SelectTrigger className="">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo de conta" />
                   </SelectTrigger>
-                  <SelectContent className="">
-                    <SelectItem  className="" value="student">Aluno</SelectItem>
-                    <SelectItem className="" value="teacher">Professor</SelectItem>
+                  <SelectContent>
+                    <SelectItem value="student">Aluno</SelectItem>
+                    <SelectItem value="teacher">Professor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label className="" htmlFor="password">Senha</Label>
+                <Label htmlFor="password">Senha</Label>
                 <div className="relative">
-                  <Input className=""
+                  <Input
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -162,19 +163,15 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label  className="" htmlFor="confirmPassword">Confirmar senha</Label>
+                <Label htmlFor="confirmPassword">Confirmar senha</Label>
                 <div className="relative">
-                  <Input className=""
+                  <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -190,20 +187,14 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              <Button 
-              size="sm"
-              variant="outline"
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? 'Criando conta...' : 'Criar conta'}
@@ -214,7 +205,6 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-600">
                 Já tem uma conta?{' '}
                 <Button
-                size="sm"
                   variant="link"
                   className="p-0 h-auto font-semibold"
                   onClick={() => navigate('/login')}
@@ -229,4 +219,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

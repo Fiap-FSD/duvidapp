@@ -12,11 +12,19 @@ interface User {
   createdAt: Date;
 }
 
+interface RegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: 'student' | 'teacher';
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (userData: Omit<User, 'id' | 'createdAt'>) => Promise<boolean>;
+  // Ajustando o tipo para um retorno mais informativo
+  register: (userData: RegisterPayload) => Promise<{ success: boolean; message?: string }>;
   isLoading: boolean;
 }
 
@@ -26,38 +34,17 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Usuários de demonstração
-const DEMO_USERS: User[] = [
-  {
-    id: '1',
-    name: 'João Silva',
-    email: 'aluno@teste.com',
-    role: 'student',
-    createdAt: new Date('2024-01-15'),
-  },
-  {
-    id: '2',
-    name: 'Prof. Maria Santos',
-    email: 'professor@teste.com',
-    role: 'teacher',
-    createdAt: new Date('2024-01-10'),
-  },
-];
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  
 
-  // Carregar usuário do localStorage na inicialização
   useEffect(() => {
     const loadUser = () => {
       try {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          // Converter strings de data de volta para objetos Date
           userData.createdAt = new Date(userData.createdAt);
           setUser(userData);
         }
@@ -68,47 +55,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false);
       }
     };
-
     loadUser();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-
     try {
       const response = await fetch('https://duvidapp.onrender.com/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        return false;
-      }
+      if (!response.ok) return false;
 
       const data = await response.json();
       const accessToken = data.access_token;
 
       if (accessToken) {
-        // Armazena o token no cookie
-        document.cookie = `access_token=${accessToken}; path=/`;
-
-         Cookies.set('token', accessToken, { expires: 7 });
-
-        // Opcional: buscar dados do usuário na resposta ou em outra rota
-        // Exemplo: data.user
+        Cookies.set('access_token', accessToken, { expires: 7, path: '/' });
         const userData = data.user || { id: '', name: '', email, role: 'student', createdAt: new Date() };
         setUser(userData);
         localStorage.setItem('currentUser', JSON.stringify(userData));
-
-        // Redireciona para a página principal
         window.location.href = '/';
-
         return true;
       }
-
       return false;
     } catch (error) {
       console.error('Erro no login:', error);
@@ -118,50 +89,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (userData: Omit<User, 'id' | 'createdAt'>): Promise<boolean> => {
+  // ✅ FUNÇÃO REGISTER CORRIGIDA
+  const register = async (userData: RegisterPayload): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
-    
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Buscar usuários existentes
-      const localUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const allUsers = [...DEMO_USERS, ...localUsers];
-      
-      // Verificar se email já existe
-      if (allUsers.some(u => u.email === userData.email)) {
-        return false;
+      // Mapeia o papel do frontend para o que o backend espera
+      const roleForApi = userData.role === 'teacher' ? 'admin' : 'user';
+
+      const response = await fetch('https://duvidapp.onrender.com/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          role: roleForApi,
+        }),
+      });
+
+      if (response.ok) { // Status 201 Created
+        return { success: true };
+      }
+
+      // Trata erros específicos como email já em uso
+      if (response.status === 409) {
+        const errorData = await response.json();
+        return { success: false, message: errorData.message || 'Este email já está em uso.' };
       }
       
-      // Criar novo usuário
-      const newUser: User = {
-        ...userData,
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: new Date(),
-      };
-      
-      // Salvar usuário
-      localUsers.push(newUser);
-      localStorage.setItem('users', JSON.stringify(localUsers));
-      
-      // Fazer login automático
-      setUser(newUser);
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      
-      return true;
+      // Outros erros
+      return { success: false, message: 'Ocorreu um erro inesperado.' };
+
     } catch (error) {
-      console.error('Erro no registro:', error);
-      return false;
+      console.error('Erro na chamada de registro:', error);
+      return { success: false, message: 'Não foi possível conectar ao servidor.' };
     } finally {
       setIsLoading(false);
     }
   };
 
+
   const logout = () => {
-    Cookies.remove('token');
+    Cookies.remove('access_token');
+    localStorage.removeItem('currentUser');
     setUser(null);
-    // router.push('/login');
     navigate('/login');
   };
 
@@ -173,11 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -187,4 +154,3 @@ export function useAuth() {
   }
   return context;
 }
-
