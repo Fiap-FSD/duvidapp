@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +17,10 @@ export function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="border-b bg-white shadow-sm">
+    <header className="border-b bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          {/* Logo e Navegação */}
+          {/* Logo e Navegação Principal */}
           <div className="flex items-center space-x-6">
             <div 
               className="flex items-center space-x-2 cursor-pointer"
@@ -35,7 +34,7 @@ export function Header() {
 
             {user && (
               <nav className="hidden md:flex items-center space-x-4">
-                <Button className=""
+                <Button
                   variant="ghost" 
                   size="sm"
                   onClick={() => navigate('/')}
@@ -44,7 +43,7 @@ export function Header() {
                 </Button>
                 
                 {user.role === 'teacher' && (
-                  <Button className=""
+                  <Button
                     variant="ghost" 
                     size="sm"
                     onClick={() => navigate('/dashboard')}
@@ -61,9 +60,9 @@ export function Header() {
           <div className="flex items-center space-x-3">
             {user ? (
               <>
-                <Button className=""
+                <Button
                   size="sm"
-                  variant="ghost" 
+                  variant="default" 
                   onClick={() => navigate('/new-question')}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -72,38 +71,26 @@ export function Header() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={user.avatar || '/avatar-default.png'} 
-                          alt={user.name} 
-                          className="h-8 w-8" 
-                        />
-                        <AvatarFallback className="">
-                          {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal" inset>
+                    <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.role === 'teacher' ? 'Professor' : 'Aluno'}
-                        </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="" />
-                    <DropdownMenuItem className="" inset>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="mr-2 h-4 w-4" />
                       <span>Perfil</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="" />
-                    <DropdownMenuItem className="" inset onClick={logout}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sair</span>
                     </DropdownMenuItem>
@@ -112,16 +99,15 @@ export function Header() {
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button className=""
+                <Button
                   variant="ghost" 
                   size="sm"
                   onClick={() => navigate('/login')}
                 >
                   Entrar
                 </Button>
-                <Button className=""
+                <Button
                   size="sm"
-                  variant="ghost" 
                   onClick={() => navigate('/register')}
                 >
                   Cadastrar
@@ -134,4 +120,3 @@ export function Header() {
     </header>
   );
 }
-
