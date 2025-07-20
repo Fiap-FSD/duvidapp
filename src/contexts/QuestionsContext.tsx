@@ -188,10 +188,48 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   };
 
-  const filteredAndSortedQuestions = useMemo(() => {
-    // ... sua lógica de filtro e ordenação ...
-    return allQuestions; // Simplificado para o exemplo
-  }, [allQuestions, filters]);
+ const filteredAndSortedQuestions = useMemo(() => {
+  let filtered = [...allQuestions];
+
+  // 🔍 Filtrar por termo de busca (no título ou conteúdo)
+  if (filters.searchTerm.trim()) {
+    const lowerSearch = filters.searchTerm.toLowerCase();
+    filtered = filtered.filter(q =>
+      q.title.toLowerCase().includes(lowerSearch) ||
+      q.content.toLowerCase().includes(lowerSearch)
+    );
+  }
+
+  // 🏷️ Filtrar por tags
+  if (filters.tags.length > 0) {
+    filtered = filtered.filter(q =>
+      filters.tags.every(tag => q.tags.includes(tag))
+    );
+  }
+
+  // ✅ Filtrar resolvidos
+  if (!filters.showResolved) {
+    filtered = filtered.filter(q => !q.isResolved);
+  }
+
+  // 🔽 Ordenação
+  switch (filters.sortBy) {
+    case 'newest':
+      filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      break;
+    case 'oldest':
+      filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      break;
+    case 'mostViewed':
+      filtered.sort((a, b) => b.views - a.views);
+      break;
+    case 'mostAnswered':
+      filtered.sort((a, b) => b.answers.length - a.answers.length);
+      break;
+  }
+
+  return filtered;
+}, [allQuestions, filters]);
 
   // Objeto de valor completo (Restaurado)
   const value: QuestionsContextType = {
