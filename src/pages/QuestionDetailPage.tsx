@@ -126,7 +126,7 @@ export default function QuestionDetailPage() {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3000/resposta/${questionId}`, {
+      const response = await fetch(`https://duvidapp.onrender.com/resposta/${questionId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.status === 404) {

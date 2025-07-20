@@ -93,7 +93,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
         setAllQuestions([]);
         return;
       }
-      const response = await fetch('http://localhost:3000/duvida', {
+      const response = await fetch('https://duvidapp.onrender.com/duvida', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) {
@@ -143,7 +143,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
       return false;
     }
     try {
-      const response = await fetch('http://localhost:3000/duvida', {
+      const response = await fetch('https://duvidapp.onrender.com/duvida', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

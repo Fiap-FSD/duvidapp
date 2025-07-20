@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // 1. Faz a chamada POST para a API de login
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch('https://duvidapp.onrender.com/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

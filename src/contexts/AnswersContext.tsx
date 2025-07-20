@@ -87,7 +87,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const addAnswer = async (answerData: AddAnswerData): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta`, 'POST', answerData);
+    const response = await callApi(`https://duvidapp.onrender.com/resposta`, 'POST', answerData);
     if (response) {
       showToast('Resposta criada com sucesso!', 'success');
       return true;
@@ -96,7 +96,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteAnswer = async (answerId: string): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta/${answerId}`, 'DELETE');
+    const response = await callApi(`https://duvidapp.onrender.com/resposta/${answerId}`, 'DELETE');
     if (response) {
       showToast('Resposta deletada com sucesso!', 'success');
       return true;
@@ -105,7 +105,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const updateAnswer = async (answerId: string, updates: UpdateAnswerData): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta/${answerId}`, 'PUT', updates);
+    const response = await callApi(`https://duvidapp.onrender.com/resposta/${answerId}`, 'PUT', updates);
     if (response) {
       showToast('Resposta atualizada com sucesso!', 'success');
       return true;
@@ -114,7 +114,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const verifyAnswer = async (answerId: string): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta/${answerId}/verify`, 'PATCH');
+    const response = await callApi(`https://duvidapp.onrender.com/resposta/${answerId}/verify`, 'PATCH');
     if (response) {
       showToast('Resposta marcada como a melhor!', 'success');
       return true;
@@ -123,7 +123,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const likeAnswer = async (answerId: string): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta/${answerId}/like`, 'PATCH');
+    const response = await callApi(`https://duvidapp.onrender.com/resposta/${answerId}/like`, 'PATCH');
     if (response) {
       showToast('Like registrado!', 'success');
       return true;
@@ -132,7 +132,7 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
   };
 
   const dislikeAnswer = async (answerId: string): Promise<boolean> => {
-    const response = await callApi(`http://localhost:3000/resposta/${answerId}/dislike`, 'PATCH');
+    const response = await callApi(`https://duvidapp.onrender.com/resposta/${answerId}/dislike`, 'PATCH');
     if (response) {
       showToast('Dislike registrado!', 'success');
       return true;
