@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NewQuestionPage from './pages/NewQuestionPage';
 import QuestionDetailPage from './pages/QuestionDetailPage';
+import PerfilPage from './pages/ProfilePage';
 import './App.css';
 
 function App() {
@@ -19,7 +20,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/new-question" element={<NewQuestionPage />} />
             <Route path="/question/:id" element={<QuestionDetailPage />} />
-            <Route path="/perfil" element={<PerfilPage />} /> {/* Perfil Route */}
+            <Route path="/perfil" element={<PerfilPage />} />
           </Routes>
         </div>
       </AppProviders>
