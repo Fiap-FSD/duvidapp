@@ -20,7 +20,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/new-question" element={<NewQuestionPage />} />
             <Route path="/question/:id" element={<QuestionDetailPage />} />
-            <Route path="/perfil" element={<PerfilPage />} />
+            <Route path="/perfil" element={<PerfilPage />} /> {/* Perfil Route */}
           </Routes>
         </div>
       </AppProviders>
