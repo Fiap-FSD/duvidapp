@@ -1,140 +1,155 @@
-'use client';
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
-// --- Tipos ---
-interface DecodedToken {
-  sub: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  iat: number;
-  exp: number;
-}
-
+// Tipos
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'student' | 'teacher';
+  avatar?: string;
+  createdAt: Date;
+}
+
+interface RegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: 'student' | 'teacher';
 }
 
 interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-}
-
-// --- Função Auxiliar para ler o Cookie ---
-function getCookie(name: string): string | null {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
+  // Ajustando o tipo para um retorno mais informativo
+  register: (userData: RegisterPayload) => Promise<{ success: boolean; message?: string }>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-  // Efeito para verificar o token no cookie ao carregar a página
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const token = getCookie('access_token');
-    if (token) {
+    const loadUser = () => {
       try {
-        const decodedToken: DecodedToken = jwtDecode(token);
-        if (decodedToken.exp * 1000 > Date.now()) {
-          setUser({
-            id: decodedToken.sub,
-            name: decodedToken.name,
-            email: decodedToken.email,
-            role: decodedToken.role,
-          });
-        } else {
-          logout();
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          userData.createdAt = new Date(userData.createdAt);
+          setUser(userData);
         }
       } catch (error) {
-        console.error("Token no cookie é inválido:", error);
-        logout();
+        console.error('Erro ao carregar usuário:', error);
+        localStorage.removeItem('currentUser');
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+    loadUser();
   }, []);
 
-  // **FUNÇÃO DE LOGIN CORRIGIDA**
-  // Agora ela faz a chamada à API e retorna true/false
   const login = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      // 1. Faz a chamada POST para a API de login
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const response = await fetch('https://duvidapp.onrender.com/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        // Se a resposta não for 2xx, o login falhou
-        return false;
-      }
+      if (!response.ok) return false;
 
-      // 2. Extrai o objeto JSON da resposta
       const data = await response.json();
-      const token = data.access_token; // Pega o token de dentro do objeto
+      const accessToken = data.access_token;
 
-      if (!token) {
-        return false; // Se não houver token, falhou
+      if (accessToken) {
+        Cookies.set('access_token', accessToken, { expires: 7, path: '/' });
+        const userData = data.user || { id: '', name: '', email, role: 'student', createdAt: new Date() };
+        setUser(userData);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        window.location.href = '/';
+        return true;
       }
-
-      // 3. Salva o token no cookie
-      document.cookie = `access_token=${token}; path=/; max-age=86400; SameSite=Lax`;
-
-      // 4. Decodifica o token e atualiza o estado do usuário
-      const decodedToken: DecodedToken = jwtDecode(token);
-      setUser({
-        id: decodedToken.sub,
-        name: decodedToken.name,
-        email: decodedToken.email,
-        role: decodedToken.role,
-      });
-
-      return true; // Sucesso!
-
+      return false;
     } catch (error) {
-      console.error("Erro na chamada da API de login:", error);
-      return false; // Falha
+      console.error('Erro no login:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // **FUNÇÃO DE LOGOUT CORRIGIDA**
-  const logout = () => {
-    // Remove o cookie e limpa o estado do usuário
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    setUser(null);
-    // **ALTERAÇÃO FEITA AQUI**: Força o redirecionamento para a página inicial
-    window.location.href = '/';
+  // ✅ FUNÇÃO REGISTER CORRIGIDA
+  const register = async (userData: RegisterPayload): Promise<{ success: boolean; message?: string }> => {
+    setIsLoading(true);
+    try {
+      // Mapeia o papel do frontend para o que o backend espera
+      const roleForApi = userData.role === 'teacher' ? 'admin' : 'user';
+
+      const response = await fetch('https://duvidapp.onrender.com/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          role: roleForApi,
+        }),
+      });
+
+      if (response.ok) { // Status 201 Created
+        return { success: true };
+      }
+
+      // Trata erros específicos como email já em uso
+      if (response.status === 409) {
+        const errorData = await response.json();
+        return { success: false, message: errorData.message || 'Este email já está em uso.' };
+      }
+      
+      // Outros erros
+      return { success: false, message: 'Ocorreu um erro inesperado.' };
+
+    } catch (error) {
+      console.error('Erro na chamada de registro:', error);
+      return { success: false, message: 'Não foi possível conectar ao servidor.' };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const value = {
+
+  const logout = () => {
+    Cookies.remove('access_token');
+    localStorage.removeItem('currentUser');
+    setUser(null);
+    navigate('/login');
+  };
+
+  const value: AuthContextType = {
     user,
-    isAuthenticated: !!user,
     login,
     logout,
+    register,
+    isLoading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;

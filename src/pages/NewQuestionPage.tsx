@@ -64,7 +64,7 @@ export default function NewQuestionPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:3000/duvida', { // URL do seu backend
+      const response = await fetch('https://duvidapp.onrender.com/duvida', { // URL do seu backend
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
