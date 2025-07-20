@@ -98,14 +98,7 @@ export function Header() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="" />
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      inset
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate('/perfil');
-                      }}
-                    >
+                    <DropdownMenuItem className="" inset>
                       <User className="mr-2 h-4 w-4" />
                       <span>Perfil</span>
                     </DropdownMenuItem>

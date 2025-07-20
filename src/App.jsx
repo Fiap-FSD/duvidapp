@@ -6,7 +6,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NewQuestionPage from './pages/NewQuestionPage';
 import QuestionDetailPage from './pages/QuestionDetailPage';
-import PerfilPage from './pages/ProfilePage';
 import './App.css';
 
 function App() {
