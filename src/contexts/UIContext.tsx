@@ -42,7 +42,6 @@ export function UIProvider({ children }: UIProviderProps) {
 
     setToasts(prev => [...prev, newToast]);
 
-    // Remover toast automaticamente após 5 segundos
     setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
     }, 5000);

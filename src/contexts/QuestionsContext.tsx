@@ -4,10 +4,55 @@ import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
 
 // --- Tipos ---
-interface Vote { id: string; userId: string; questionId?: string; answerId?: string; type: 'up' | 'down'; createdAt: Date; }
-interface Answer { id: string; questionId: string; content: string; authorId: string; authorName: string; authorAvatar?: string; createdAt: Date; updatedAt: Date; votes: number; isVerified: boolean; isCorrect: boolean; verificationComment?: string; }
-interface Question { id: string; title: string; content: string; tags: string[]; author: { id: string; name: string; avatar?: string; role: 'student' | 'teacher'; }; createdAt: Date; updatedAt: Date; views: number; answers: Answer[]; isResolved: boolean; likes: number; }
-interface QuestionFilters { tags: string[]; searchTerm: string; sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered'; status: 'all' | 'resolved' | 'unresolved'; authorId?: string; }
+interface Vote {
+  id: string;
+  userId: string;
+  questionId?: string;
+  answerId?: 'up' | 'down';
+  createdAt: Date;
+}
+
+interface Answer {
+  id: string;
+  questionId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  votes: number;
+  isVerified: boolean;
+  isCorrect: boolean;
+  verificationComment?: string;
+}
+
+interface Question {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+    role: 'student' | 'teacher';
+  };
+  createdAt: Date;
+  updatedAt: Date;
+  views: number;
+  answers: Answer[];
+  isResolved: boolean;
+  likes: number;
+}
+
+interface QuestionFilters {
+  tags: string[];
+  searchTerm: string;
+  sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered';
+  status: 'all' | 'resolved' | 'unresolved';
+  authorId?: string;
+}
 
 interface QuestionsContextType {
   questions: Question[];

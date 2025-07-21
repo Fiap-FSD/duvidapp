@@ -22,7 +22,6 @@ export function AppProviders({ children }: AppProvidersProps) {
   );
 }
 
-// Re-exportar hooks para facilitar importação
 export { useAuth } from '../contexts/AuthContext';
 export { useQuestions } from '../contexts/QuestionsContext';
 export { useAnswers } from '../contexts/AnswersContext';
