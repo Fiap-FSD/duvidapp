@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { MessageCircle, Eye, ThumbsUp, CheckCircle } from 'lucide-react';
+import { MessageCircle, ThumbsUp, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -20,7 +20,6 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
   const { voteQuestion, getUserQuestionVote } = useQuestions();
   const { user } = useAuth();
 
-  // A "fonte da verdade" agora vem do contexto
   const isLikedByCurrentUser = user ? !!getUserQuestionVote(question.id, user.id) : false;
   
   const lastAnswer = React.useMemo(() => {
@@ -34,11 +33,10 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
     navigate(`/question/${question.id}`);
   };
 
-  // Esta função agora chama a API através do contexto
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
-      navigate('/login'); // Redireciona para o login se não houver usuário
+      navigate('/login');
       return;
     }
     voteQuestion(question.id);
@@ -114,13 +112,6 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
               <span>{question.answers?.length ?? 0}</span>
             </div>
 
-            <div
-              className="flex items-center space-x-1"
-              title="Visualizações"
-            >
-              <Eye className="h-4 w-4" />
-              <span>{question.views ?? 0}</span>
-            </div>
           </div>
         </div>
 
