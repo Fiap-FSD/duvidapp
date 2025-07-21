@@ -40,10 +40,8 @@ const AnswersContext = createContext<AnswersContextType | undefined>(undefined);
 // --- Componente Provider ---
 export function AnswersProvider({ children }: { children: ReactNode }) {
   const { showToast } = useUI();
-  // RESTAURADO: Estado para gerenciar os votos localmente
   const [votes, setVotes] = useState<Vote[]>([]);
 
-  // RESTAURADO: Efeitos para carregar/salvar votos do localStorage
   useEffect(() => {
     try {
       const savedVotes = localStorage.getItem('answer_votes');
@@ -140,7 +138,6 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  // RESTAURADO: Lógica de votos (mantida para compatibilidade)
   const voteAnswer = (answerId: string, userId: string, type: 'up' | 'down') => {
     let newVotes = [...votes];
     const existingVote = votes.find(v => v.answerId === answerId && v.userId === userId);
@@ -157,12 +154,10 @@ export function AnswersProvider({ children }: { children: ReactNode }) {
     setVotes(newVotes);
   };
   
-  // RESTAURADO: Função para pegar o voto do usuário
   const getUserVote = (answerId: string, userId: string) => {
     return votes.find(v => v.answerId === answerId && v.userId === userId);
   };
 
-  // CORRIGIDO: Adicionadas todas as funções ao objeto de valor
   const value = { 
     addAnswer, 
     updateAnswer, 
