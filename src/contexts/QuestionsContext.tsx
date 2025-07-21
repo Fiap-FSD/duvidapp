@@ -11,6 +11,7 @@ interface QuestionFilters { tags: string[]; searchTerm: string; sortBy: 'newest'
 
 interface QuestionsContextType {
   questions: Question[];
+  allQuestionsUnfiltered: Question[];
   getQuestionById: (id: string) => Question | undefined;
   updateQuestion: (id: string, updates: Partial<Question>) => void;
   filters: QuestionFilters;
@@ -120,8 +121,6 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
   const filteredAndSortedQuestions = useMemo(() => {
     let filtered = [...allQuestions];
 
-    // --- CADEIA DE FILTROS ---
-
     if (filters.searchTerm.trim()) {
       const lowerSearch = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(q =>
@@ -150,7 +149,6 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
         );
     }
 
-    // --- ORDENAÇÃO ---
     switch (filters.sortBy) {
       case 'newest':
         filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -171,6 +169,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
 
   const value: QuestionsContextType = {
     questions: filteredAndSortedQuestions,
+    allQuestionsUnfiltered: allQuestions,
     getQuestionById,
     updateQuestion,
     filters,
