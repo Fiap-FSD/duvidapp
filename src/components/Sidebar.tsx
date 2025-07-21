@@ -111,7 +111,6 @@ export function Sidebar() {
               {[
                 { value: 'newest', label: 'Mais recentes' },
                 { value: 'oldest', label: 'Mais antigas' },
-                { value: 'mostViewed', label: 'Mais visualizadas' },
                 { value: 'mostAnswered', label: 'Mais respondidas' },
               ].map(option => (
                 <Button

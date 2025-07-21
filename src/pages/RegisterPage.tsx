@@ -23,7 +23,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ HANDLESUBMIT ATUALIZADO
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -42,7 +41,6 @@ export default function RegisterPage() {
     }
 
     try {
-      // A função register agora retorna um objeto { success, message }
       const result = await register({
         name: formData.name,
         email: formData.email,
@@ -51,10 +49,8 @@ export default function RegisterPage() {
       });
 
       if (result.success) {
-        // Sucesso! Redireciona para a página de login para o novo usuário entrar.
         navigate('/login', { state: { message: 'Conta criada com sucesso! Faça seu login.' } });
       } else {
-        // Exibe a mensagem de erro vinda da API
         setError(result.message || 'Erro ao criar conta.');
       }
     } catch (err) {

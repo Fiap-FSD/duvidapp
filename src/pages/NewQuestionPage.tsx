@@ -35,7 +35,6 @@ export default function NewQuestionPage() {
     setIsLoading(true);
     setError('');
 
-    // Validações
     if (formData.title.trim().length < 10) {
       setError('O título deve ter pelo menos 10 caracteres');
       setIsLoading(false);
@@ -60,17 +59,17 @@ export default function NewQuestionPage() {
       if (!token) {
         setError('Você não está autenticado. Por favor, faça login novamente.');
         setIsLoading(false);
-        navigate('/login'); // Redireciona para o login se não houver token
+        navigate('/login');
         return;
       }
 
-      const response = await fetch('https://duvidapp.onrender.com/duvida', { // URL do seu backend
+      const response = await fetch('https://duvidapp.onrender.com/duvida', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Envia o token para o backend
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ // Envia os dados validados
+        body: JSON.stringify({
           title: formData.title.trim(),
           content: formData.content.trim(),
           tags: formData.tags,

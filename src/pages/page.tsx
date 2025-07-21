@@ -10,15 +10,16 @@ import { MessageCircle, Plus, Users, BookOpen } from 'lucide-react';
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { questions, isLoading } = useQuestions();
+  // Pega a nova função 'refetchQuestions' do contexto
+  const { questions, isLoading, refetchQuestions } = useQuestions();
 
-  // Criar dados de exemplo se não houver dúvidas
+  // Este useEffect irá forçar o recarregamento dos dados sempre que a página for acessada
   useEffect(() => {
-    if (!isLoading && questions.length === 0 && user) {
-      // Adicionar algumas dúvidas de exemplo
-      // Isso seria feito através do contexto em uma aplicação real
+    if (user) {
+      refetchQuestions();
     }
-  }, [isLoading, questions.length, user]);
+  }, [user]); // A dependência em 'user' garante que o fetch só ocorre quando o usuário está logado
+               // e que a função 'refetchQuestions' (que depende do user) está estável.
 
   if (!user) {
     return (
@@ -35,7 +36,7 @@ export default function HomePage() {
             </p>
             
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <Card className="">
+              <Card>
                 <CardContent className="p-6 text-center">
                   <MessageCircle className="h-8 w-8 text-blue-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">Poste Dúvidas</h3>
@@ -44,8 +45,7 @@ export default function HomePage() {
                   </p>
                 </CardContent>
               </Card>
-              
-              <Card className="">
+              <Card>
                 <CardContent className="p-6 text-center">
                   <Users className="h-8 w-8 text-green-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">Ajude Colegas</h3>
@@ -54,8 +54,7 @@ export default function HomePage() {
                   </p>
                 </CardContent>
               </Card>
-              
-              <Card className="">
+              <Card>
                 <CardContent className="p-6 text-center">
                   <BookOpen className="h-8 w-8 text-purple-600 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">Validação do Professor</h3>
@@ -102,7 +101,7 @@ export default function HomePage() {
             </p>
           </div>
           
-          <Button size="sm" variant="ghost" className="" onClick={() => navigate('/new-question')}>
+          <Button size="sm" variant="ghost" onClick={() => navigate('/new-question')}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Dúvida
           </Button>
@@ -128,7 +127,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <Card className="">
+          <Card>
             <CardContent className="p-12 text-center">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -137,7 +136,7 @@ export default function HomePage() {
               <p className="text-gray-600 mb-6">
                 Seja o primeiro a postar uma dúvida para a turma!
               </p>
-              <Button  size="sm" variant="ghost" className="" onClick={() => navigate('/new-question')}>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/new-question')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Primeira Dúvida
               </Button>
@@ -148,4 +147,3 @@ export default function HomePage() {
     </MainLayout>
   );
 }
-
