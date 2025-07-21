@@ -233,6 +233,15 @@ export default function QuestionDetailPage() {
         <div className="pb-6 border-b">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{question.title}</h1>
           <p className="text-gray-800 leading-relaxed whitespace-pre-wrap mt-4">{question.content}</p>
+
+          <div className="mt-4">
+            <AuthorInfo
+              name={question.author.name}
+              avatar={question.author.avatar}
+              date={new Date(question.createdAt)}
+              label="Postado"
+            />
+          </div>
         </div>
 
         <div className="mt-10">
