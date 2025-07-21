@@ -4,56 +4,10 @@ import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
 
 // --- Tipos ---
-interface Vote {
-  id: string;
-  userId: string;
-  questionId?: string;
-  answerId?: string;
-  type: 'up' | 'down';
-  createdAt: Date;
-}
-
-interface Answer {
-  id: string;
-  questionId: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  votes: number;
-  isVerified: boolean;
-  isCorrect: boolean;
-  verificationComment?: string;
-}
-
-interface Question {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-  author: {
-    id: string;
-    name: string;
-    avatar?: string;
-    role: 'student' | 'teacher';
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  views: number;
-  answers: Answer[];
-  isResolved: boolean;
-  likes: number;
-}
-
-interface QuestionFilters {
-  tags: string[];
-  searchTerm: string;
-  sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered';
-  status: 'all' | 'resolved' | 'unresolved';
-  authorId?: string;
-}
+interface Vote { id: string; userId: string; questionId?: string; answerId?: string; type: 'up' | 'down'; createdAt: Date; }
+interface Answer { id: string; questionId: string; content: string; authorId: string; authorName: string; authorAvatar?: string; createdAt: Date; updatedAt: Date; votes: number; isVerified: boolean; isCorrect: boolean; verificationComment?: string; }
+interface Question { id: string; title: string; content: string; tags: string[]; author: { id: string; name: string; avatar?: string; role: 'student' | 'teacher'; }; createdAt: Date; updatedAt: Date; views: number; answers: Answer[]; isResolved: boolean; likes: number; }
+interface QuestionFilters { tags: string[]; searchTerm: string; sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered'; status: 'all' | 'resolved' | 'unresolved'; authorId?: string; }
 
 interface QuestionsContextType {
   questions: Question[];
@@ -80,7 +34,6 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const { showToast } = useUI();
 
   const fetchDuvidas = async () => {
     if (!user) {
@@ -138,14 +91,11 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-
   useEffect(() => {
     fetchDuvidas();
   }, [user]);
   
-  const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => {
-    return true;
-  };
+  const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => { return true; };
   
   const updateQuestion = (id: string, updates: Partial<Question>) => {
     setAllQuestions(prev =>
@@ -153,8 +103,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const voteQuestion = async (questionId: string): Promise<void> => {
-  };
+  const voteQuestion = async (questionId: string): Promise<void> => { };
 
   const getUserQuestionVote = (questionId: string, userId: string): Vote | undefined => {
     return questionVotes.find(v => v.questionId === questionId && v.userId === userId);
@@ -168,8 +117,10 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   };
 
- const filteredAndSortedQuestions = useMemo(() => {
+  const filteredAndSortedQuestions = useMemo(() => {
     let filtered = [...allQuestions];
+
+    // --- CADEIA DE FILTROS ---
 
     if (filters.searchTerm.trim()) {
       const lowerSearch = filters.searchTerm.toLowerCase();
@@ -185,6 +136,10 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
       );
     }
 
+    if (filters.authorId) {
+        filtered = filtered.filter(q => q.author.id === filters.authorId);
+    }
+    
     if (filters.status === 'resolved') {
         filtered = filtered.filter(q => 
             q.answers.some(answer => answer.isVerified === true)
@@ -195,6 +150,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
         );
     }
 
+    // --- ORDENAÇÃO ---
     switch (filters.sortBy) {
       case 'newest':
         filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
