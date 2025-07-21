@@ -7,14 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Search, Filter, Tag, User, CheckCircle, Clock } from 'lucide-react';
 
 export function Sidebar() {
-  const { filters, setFilters, questions } = useQuestions();
+  const { filters, setFilters, allQuestionsUnfiltered } = useQuestions();
   const { user } = useAuth();
 
-  // Extrair todas as tags únicas das dúvidas
   const allTags = React.useMemo(() => {
     const tagCounts = new Map<string, number>();
     
-    questions.forEach(question => {
+    allQuestionsUnfiltered.forEach(question => {
       question.tags.forEach(tag => {
         tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
       });
@@ -23,7 +22,14 @@ export function Sidebar() {
     return Array.from(tagCounts.entries())
       .map(([tag, count]) => ({ name: tag, count }))
       .sort((a, b) => b.count - a.count);
-  }, [questions]);
+  }, [allQuestionsUnfiltered]);
+
+  const resolvedCount = React.useMemo(
+    () => allQuestionsUnfiltered.filter(q => q.answers.some(a => a.isVerified === true)).length,
+    [allQuestionsUnfiltered]
+  );
+  const totalCount = allQuestionsUnfiltered.length;
+  const pendingCount = totalCount - resolvedCount;
 
   const handleSearchChange = (value: string) => {
     setFilters({ searchTerm: value });
@@ -46,28 +52,29 @@ export function Sidebar() {
       tags: [],
       searchTerm: '',
       sortBy: 'newest',
-      showResolved: true,
+      status: 'all',
       authorId: undefined,
     });
   };
 
-  const showMyQuestions = () => {
+  const toggleMyQuestions = () => {
     if (user) {
-      setFilters({ authorId: user.id });
+      setFilters({
+        authorId: filters.authorId === user.id ? undefined : user.id,
+      });
     }
   };
 
   return (
     <aside className="w-80 bg-gray-50 border-r min-h-screen p-4 space-y-6">
-      {/* Busca */}
-      <Card className="">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center">
             <Search className="h-4 w-4 mr-2" />
             Buscar
           </CardTitle>
         </CardHeader>
-        <CardContent className="">
+        <CardContent>
           <Input
             type="text"
             placeholder="Buscar dúvidas..."
@@ -78,8 +85,7 @@ export function Sidebar() {
         </CardContent>
       </Card>
 
-      {/* Filtros */}
-      <Card className="">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center justify-between">
             <span className="flex items-center">
@@ -97,7 +103,6 @@ export function Sidebar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Ordenação */}
           <div>
             <label className="text-xs font-medium text-gray-700 mb-2 block">
               Ordenar por:
@@ -122,41 +127,48 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* Status */}
           <div>
             <label className="text-xs font-medium text-gray-700 mb-2 block">
               Status:
             </label>
             <div className="space-y-1">
               <Button
-                variant={filters.showResolved ? 'default' : 'ghost'}
+                variant={filters.status === 'all' ? 'default' : 'ghost'}
                 size="sm"
                 className="w-full justify-start text-xs"
-                onClick={() => setFilters({ showResolved: true })}
+                onClick={() => setFilters({ status: 'all' })}
               >
                 <CheckCircle className="h-3 w-3 mr-2" />
                 Todas
               </Button>
               <Button
-                variant={!filters.showResolved ? 'default' : 'ghost'}
+                variant={filters.status === 'resolved' ? 'default' : 'ghost'}
                 size="sm"
                 className="w-full justify-start text-xs"
-                onClick={() => setFilters({ showResolved: false })}
+                onClick={() => setFilters({ status: 'resolved' })}
               >
-                <Clock className="h-3 w-3 mr-2" />
+                <CheckCircle className="h-3 w-3 mr-2 text-green-500" />
+                Resolvidas
+              </Button>
+              <Button
+                variant={filters.status === 'unresolved' ? 'default' : 'ghost'}
+                size="sm"
+                className="w-full justify-start text-xs"
+                onClick={() => setFilters({ status: 'unresolved' })}
+              >
+                <Clock className="h-3 w-3 mr-2 text-yellow-500" />
                 Não resolvidas
               </Button>
             </div>
           </div>
 
-          {/* Minhas dúvidas */}
           {user && (
             <div>
               <Button
                 variant={filters.authorId === user.id ? 'default' : 'ghost'}
                 size="sm"
                 className="w-full justify-start text-xs"
-                onClick={showMyQuestions}
+                onClick={toggleMyQuestions}
               >
                 <User className="h-3 w-3 mr-2" />
                 Minhas dúvidas
@@ -166,16 +178,15 @@ export function Sidebar() {
         </CardContent>
       </Card>
 
-      {/* Tags */}
       {allTags.length > 0 && (
-        <Card className="">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center">
               <Tag className="h-4 w-4 mr-2" />
               Tags Populares
             </CardTitle>
           </CardHeader>
-          <CardContent className="">
+          <CardContent>
             <div className="space-y-2">
               {allTags.slice(0, 10).map(tag => (
                 <div
@@ -199,27 +210,26 @@ export function Sidebar() {
         </Card>
       )}
 
-      {/* Estatísticas rápidas */}
-      <Card className="">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Estatísticas</CardTitle>
         </CardHeader>
-        <CardContent className="">
+        <CardContent>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
               <span className="text-gray-600">Total de dúvidas:</span>
-              <span className="font-medium">{questions.length}</span>
+              <span className="font-medium">{totalCount}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Resolvidas:</span>
-              <span className="font-medium">
-                {questions.filter(q => q.isResolved).length}
+              <span className="font-medium text-green-600">
+                {resolvedCount}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Pendentes:</span>
-              <span className="font-medium">
-                {questions.filter(q => !q.isResolved).length}
+              <span className="font-medium text-yellow-600">
+                {pendingCount}
               </span>
             </div>
           </div>
@@ -228,4 +238,3 @@ export function Sidebar() {
     </aside>
   );
 }
-
