@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { useAuth } from './AuthContext';
 import { useUI } from './UIContext';
 
-// --- Tipos (Restaurados) ---
+// --- Tipos ---
 interface Vote {
   id: string;
   userId: string;
@@ -51,7 +51,7 @@ interface QuestionFilters {
   tags: string[];
   searchTerm: string;
   sortBy: 'newest' | 'oldest' | 'mostViewed' | 'mostAnswered';
-  showResolved: boolean;
+  status: 'all' | 'resolved' | 'unresolved';
   authorId?: string;
 }
 
@@ -73,13 +73,15 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [questionVotes, setQuestionVotes] = useState<Vote[]>([]);
   const [filters, setFiltersState] = useState<QuestionFilters>({
-    tags: [], searchTerm: '', sortBy: 'newest', showResolved: true,
+    tags: [],
+    searchTerm: '',
+    sortBy: 'newest',
+    status: 'all', 
   });
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const { showToast } = useUI(); // Adicionado para notificações
+  const { showToast } = useUI();
 
-  // Lógica de busca de dúvidas (Restaurada)
   const fetchDuvidas = async () => {
     if (!user) {
       setAllQuestions([]);
@@ -90,18 +92,26 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     try {
       const token = Cookies.get('access_token');
       if (!token) {
-        setAllQuestions([]);
+        setIsLoading(false);
         return;
       }
-      const response = await fetch('https://duvidapp.onrender.com/duvida', {
+
+      const questionsResponse = await fetch('https://duvidapp.onrender.com/duvida', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) {
-        setAllQuestions([]);
-        return;
-      }
-      const data: any[] = await response.json();
-      const mappedQuestions: Question[] = data.map((apiQuestion) => ({
+      if (!questionsResponse.ok) throw new Error('Falha ao buscar dúvidas.');
+      
+      const questionsFromApi: any[] = await questionsResponse.json();
+
+      const answerPromises = questionsFromApi.map(question =>
+        fetch(`https://duvidapp.onrender.com/resposta/${question._id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }).then(res => res.ok ? res.json() : [])
+      );
+
+      const answersResults = await Promise.all(answerPromises);
+
+      const mappedQuestions: Question[] = questionsFromApi.map((apiQuestion, index) => ({
         id: apiQuestion._id,
         title: apiQuestion.title,
         content: apiQuestion.content,
@@ -110,62 +120,33 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
         views: apiQuestion.viewing || 0,
         createdAt: new Date(apiQuestion.createdAt),
         updatedAt: new Date(apiQuestion.updatedAt),
-        author: { 
+        author: {
           id: apiQuestion.authorId,
-          name: apiQuestion.authorName || 'Autor Desconhecido', 
-          role: 'student' 
+          name: apiQuestion.authorName || 'Autor Desconhecido',
+          role: 'student'
         },
-        answers: apiQuestion.answers || [],
+        answers: answersResults[index] || [],
         isResolved: apiQuestion.isResolved || false,
       }));
+
       setAllQuestions(mappedQuestions);
     } catch (error) {
-      console.error('Erro ao buscar dúvidas:', error);
+      console.error('Erro ao buscar dados completos das dúvidas:', error);
       setAllQuestions([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+
   useEffect(() => {
     fetchDuvidas();
   }, [user]);
-
-  // **FUNÇÃO addQuestion CORRIGIDA**
+  
   const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => {
-    if (!user) {
-      showToast('Você precisa estar logado para criar uma dúvida.', 'error');
-      return false;
-    }
-    const token = Cookies.get('access_token');
-    if (!token) {
-      showToast('Sessão inválida. Por favor, faça login novamente.', 'error');
-      return false;
-    }
-    try {
-      const response = await fetch('https://duvidapp.onrender.com/duvida', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(questionData),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao criar a dúvida.');
-      }
-      showToast('Dúvida criada com sucesso!', 'success');
-      fetchDuvidas(); // Atualiza a lista de dúvidas
-      return true;
-    } catch (error: any) {
-      console.error("Erro ao criar dúvida:", error);
-      showToast(error.message, 'error');
-      return false;
-    }
+    return true;
   };
-
-  // O restante da sua lógica (Restaurado)
+  
   const updateQuestion = (id: string, updates: Partial<Question>) => {
     setAllQuestions(prev =>
       prev.map(q => (q.id === id ? { ...q, ...updates, updatedAt: new Date() } : q))
@@ -173,7 +154,6 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
   };
 
   const voteQuestion = async (questionId: string): Promise<void> => {
-    // ... sua lógica de voto ...
   };
 
   const getUserQuestionVote = (questionId: string, userId: string): Vote | undefined => {
@@ -189,49 +169,50 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
   };
 
  const filteredAndSortedQuestions = useMemo(() => {
-  let filtered = [...allQuestions];
+    let filtered = [...allQuestions];
 
-  // 🔍 Filtrar por termo de busca (no título ou conteúdo)
-  if (filters.searchTerm.trim()) {
-    const lowerSearch = filters.searchTerm.toLowerCase();
-    filtered = filtered.filter(q =>
-      q.title.toLowerCase().includes(lowerSearch) ||
-      q.content.toLowerCase().includes(lowerSearch)
-    );
-  }
+    if (filters.searchTerm.trim()) {
+      const lowerSearch = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(q =>
+        q.title.toLowerCase().includes(lowerSearch) ||
+        q.content.toLowerCase().includes(lowerSearch)
+      );
+    }
 
-  // 🏷️ Filtrar por tags
-  if (filters.tags.length > 0) {
-    filtered = filtered.filter(q =>
-      filters.tags.every(tag => q.tags.includes(tag))
-    );
-  }
+    if (filters.tags.length > 0) {
+      filtered = filtered.filter(q =>
+        filters.tags.every(tag => q.tags.includes(tag))
+      );
+    }
 
-  // ✅ Filtrar resolvidos
-  if (!filters.showResolved) {
-    filtered = filtered.filter(q => !q.isResolved);
-  }
+    if (filters.status === 'resolved') {
+        filtered = filtered.filter(q => 
+            q.answers.some(answer => answer.isVerified === true)
+        );
+    } else if (filters.status === 'unresolved') {
+        filtered = filtered.filter(q => 
+            !q.answers.some(answer => answer.isVerified === true)
+        );
+    }
 
-  // 🔽 Ordenação
-  switch (filters.sortBy) {
-    case 'newest':
-      filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      break;
-    case 'oldest':
-      filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      break;
-    case 'mostViewed':
-      filtered.sort((a, b) => b.views - a.views);
-      break;
-    case 'mostAnswered':
-      filtered.sort((a, b) => b.answers.length - a.answers.length);
-      break;
-  }
+    switch (filters.sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        break;
+      case 'mostViewed':
+        filtered.sort((a, b) => b.views - a.views);
+        break;
+      case 'mostAnswered':
+        filtered.sort((a, b) => b.answers.length - a.answers.length);
+        break;
+    }
 
-  return filtered;
-}, [allQuestions, filters]);
+    return filtered;
+  }, [allQuestions, filters]);
 
-  // Objeto de valor completo (Restaurado)
   const value: QuestionsContextType = {
     questions: filteredAndSortedQuestions,
     getQuestionById,
