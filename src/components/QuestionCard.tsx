@@ -93,16 +93,6 @@ export function QuestionCard({ question, compact = false }: QuestionCardProps) {
           </div>
 
           <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <div
-              onClick={handleLikeClick}
-              className={`flex items-center space-x-1 cursor-pointer hover:text-blue-600 ${
-                isLikedByCurrentUser ? 'text-blue-600 font-semibold' : ''
-              }`}
-              title={isLikedByCurrentUser ? 'Remover curtida' : 'Curtir'}
-            >
-              <ThumbsUp className="h-4 w-4" fill={isLikedByCurrentUser ? 'currentColor' : 'none'} />
-              <span>{question.likes}</span>
-            </div>
 
             <div
               className="flex items-center space-x-1"
