@@ -24,39 +24,37 @@ const DemoAccountRow: React.FC<DemoAccountRowProps> = ({ role, email, password }
   const handleCopy = (text: string, type: 'email' | 'password') => {
     navigator.clipboard.writeText(text);
     setCopied(type);
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1500); // Feedback por um tempo menor
   };
 
-  const CopyButtonIcon = ({ type }: { type: 'email' | 'password' }) =>
-    copied === type ? <ClipboardCheck className="h-3 w-3" /> : <Clipboard className="h-3 w-3" />;
+  const CopyButton = ({ text, type }: { text: string; type: 'email' | 'password' }) => (
+    <Button
+      size="icon"
+      variant="ghost"
+      className="h-6 w-6 p-1 rounded-md hover:bg-gray-100"
+      onClick={() => handleCopy(text, type)}
+      aria-label={`Copiar ${type}`}
+      title={`Copiar ${type === 'email' ? 'email' : 'senha'}`} // Tooltip
+    >
+      {copied === type ? <ClipboardCheck className="h-4 w-4 text-green-500" /> : <Clipboard className="h-4 w-4 text-blue-700" />}
+    </Button>
+  );
 
   return (
-    <div className="flex items-center justify-between text-xs text-blue-800">
+    <div className="flex items-center justify-between text-sm text-blue-900">
       <p>
-        <strong>{role}:</strong> {email} / {password}
+        <strong>{role}:</strong>
+        <span className="ml-1 font-mono text-gray-700">{email}</span>
+        <span className="text-gray-500">/</span>
+        <span className="font-mono text-gray-700">{password}</span>
       </p>
-      <div className="flex space-x-2 ml-4">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-auto px-2 py-1 text-xs"
-          onClick={() => handleCopy(email, 'email')}
-        >
-          <CopyButtonIcon type="email" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-auto px-2 py-1 text-xs"
-          onClick={() => handleCopy(password, 'password')}
-        >
-          <CopyButtonIcon type="password" />
-        </Button>
+      <div className="flex items-center space-x-1.5 ml-2">
+        <CopyButton text={email} type="email" />
+        <CopyButton text={password} type="password" />
       </div>
     </div>
   );
 };
-
 
 export default function LoginPage() {
   const navigate = useNavigate();
