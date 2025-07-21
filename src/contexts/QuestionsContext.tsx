@@ -1,9 +1,8 @@
 import Cookies from 'js-cookie';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { useUI } from './UIContext';
 
-// --- Tipos ---
+// --- Tipos (sem alterações) ---
 interface Vote {
   id: string;
   userId: string;
@@ -65,6 +64,7 @@ interface QuestionsContextType {
   voteQuestion: (questionId: string) => Promise<void>;
   getUserQuestionVote: (questionId: string, userId: string) => Vote | undefined;
   isLoading: boolean;
+  refetchQuestions: () => Promise<void>; // Nova função exposta
 }
 
 const QuestionsContext = createContext<QuestionsContextType | undefined>(undefined);
@@ -76,12 +76,13 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     tags: [],
     searchTerm: '',
     sortBy: 'newest',
-    status: 'all', 
+    status: 'all',
   });
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchDuvidas = async () => {
+  // Envolve a lógica de busca em um useCallback para estabilidade
+  const refetchQuestions = useCallback(async () => {
     if (!user) {
       setAllQuestions([]);
       setIsLoading(false);
@@ -135,11 +136,14 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]); // A função depende do 'user' para obter o token e dados
 
+  // O useEffect inicial pode ser removido, pois a HomePage irá controlar o carregamento.
+  // Ou mantido para garantir o primeiro carregamento caso o contexto seja usado em outra página inicial.
+  // Vamos mantê-lo por segurança.
   useEffect(() => {
-    fetchDuvidas();
-  }, [user]);
+    refetchQuestions();
+  }, [refetchQuestions]);
   
   const addQuestion = async (questionData: { title: string; content: string; tags: string[] }): Promise<boolean> => { return true; };
   
@@ -163,6 +167,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   };
 
+  // Lógica de filtro e ordenação (sem alterações)
   const filteredAndSortedQuestions = useMemo(() => {
     let filtered = [...allQuestions];
 
@@ -173,17 +178,14 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
         q.content.toLowerCase().includes(lowerSearch)
       );
     }
-
     if (filters.tags.length > 0) {
       filtered = filtered.filter(q =>
         filters.tags.every(tag => q.tags.includes(tag))
       );
     }
-
     if (filters.authorId) {
         filtered = filtered.filter(q => q.author.id === filters.authorId);
     }
-    
     if (filters.status === 'resolved') {
         filtered = filtered.filter(q => 
             q.answers.some(answer => answer.isVerified === true)
@@ -193,7 +195,6 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
             !q.answers.some(answer => answer.isVerified === true)
         );
     }
-
     switch (filters.sortBy) {
       case 'newest':
         filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -223,6 +224,7 @@ export function QuestionsProvider({ children }: { children: ReactNode }) {
     voteQuestion,
     getUserQuestionVote,
     isLoading,
+    refetchQuestions, // Exporta a nova função
   };
 
   return (
