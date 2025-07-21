@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Banco de Dúvidas Colaborativo",
+  title: "DuvidApp",
   description: "Plataforma colaborativa para dúvidas e respostas entre alunos e professores",
 };
 
